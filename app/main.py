@@ -3,6 +3,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
 import os
 import logging
 
@@ -18,8 +19,45 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Create database tables
-# Base.metadata.create_all(bind=engine)  # Uncomment when database is ready
+# Application readiness flag
+app_ready = False
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Modern FastAPI lifespan handler for startup/shutdown."""
+    global app_ready
+    logger.info("Starting Madan Sara microservice...")
+
+    # Check database connection (non-blocking)
+    try:
+        db_healthy = check_db_connection()
+        if db_healthy:
+            logger.info("✓ Database connection established")
+        else:
+            logger.warning("✗ Database connection failed - continuing anyway")
+    except Exception as e:
+        logger.warning(f"✗ Database check failed: {e} - continuing anyway")
+
+    # Initialize service mesh
+    try:
+        mesh = get_service_mesh()
+        logger.info("✓ Service mesh initialized")
+    except Exception as e:
+        logger.warning(f"Service mesh initialization failed: {e}")
+
+    # Initialize ZeroDB client
+    try:
+        zerodb = get_zerodb()
+        logger.info("✓ ZeroDB client initialized")
+    except Exception as e:
+        logger.warning(f"ZeroDB initialization failed: {e}")
+
+    app_ready = True
+    logger.info("Madan Sara microservice ready")
+
+    yield
+
+    logger.info("Shutting down Madan Sara microservice...")
 
 app = FastAPI(
     title="Madan Sara API",
@@ -27,6 +65,7 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 # CORS middleware
@@ -57,34 +96,6 @@ async def root():
         "description": "Unified audience conversion intelligence layer",
         "status": "operational",
     }
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize services on startup."""
-    logger.info("Starting Madan Sara microservice...")
-
-    # Check database connection
-    if check_db_connection():
-        logger.info("✓ Database connection established")
-    else:
-        logger.warning("✗ Database connection failed")
-
-    # Initialize service mesh
-    mesh = get_service_mesh()
-    logger.info("✓ Service mesh initialized")
-
-    # Initialize ZeroDB client
-    zerodb = get_zerodb()
-    logger.info("✓ ZeroDB client initialized")
-
-    logger.info("Madan Sara microservice ready")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown."""
-    logger.info("Shutting down Madan Sara microservice...")
 
 
 @app.middleware("http")
