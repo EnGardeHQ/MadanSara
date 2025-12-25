@@ -2,14 +2,14 @@
 ## Microservices Database Architecture
 
 **Date**: December 2024  
-**Status**: Planning  
-**Decision**: Shared PostgreSQL Database with Schema Isolation
+**Status**: Approved  
+**Decision**: Use Existing En Garde PostgreSQL Database with Schema Isolation
 
 ---
 
 ## Executive Summary
 
-For the En Garde microservices architecture (Langflow, EasyAppointments/EGM Scheduler, MadanSara, Onside, Sankore), we recommend a **shared PostgreSQL database with schema-based isolation** rather than separate databases.
+For the En Garde microservices architecture (Langflow, EasyAppointments/EGM Scheduler, MadanSara, Onside, Sankore), we will use the **existing En Garde PostgreSQL database on Railway with schema-based isolation** rather than creating separate databases.
 
 This balances:
 - **Operational simplicity** (single database to manage)
@@ -54,10 +54,19 @@ This balances:
 │  ├─ flow_executions                            │
 │  └─ flow_logs                                  │
 │                                                 │
-│  Schema: scheduler                             │
+└─────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────┐
+│           MySQL Database (Railway)              │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  EasyAppointments/Scheduler                    │
 │  ├─ appointments                               │
 │  ├─ availability                               │
 │  └─ notifications                              │
+│                                                 │
+│  Note: Separate MySQL database to avoid        │
+│  cross-database replication complexity         │
 │                                                 │
 └─────────────────────────────────────────────────┘
 ```
