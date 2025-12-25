@@ -1,0 +1,61 @@
+[project]
+name = "madan-sara"
+version = "0.1.0"
+description = "Unified audience conversion intelligence layer for En Garde platform"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "sqlalchemy>=2.0.25",
+    "alembic>=1.13.1",
+    "psycopg2-binary>=2.9.9",
+    "pydantic>=2.5.3",
+    "pydantic-settings>=2.1.0",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-multipart>=0.0.6",
+    "httpx>=0.26.0",
+    "jinja2>=3.1.3",
+    "anthropic>=0.18.0",
+    "sendgrid>=6.11.0",
+    "twilio>=8.12.0",
+    "meta-python-sdk>=0.1.0",
+    "linkedin-api>=2.2.0",
+    "tweepy>=4.14.0",
+    "scikit-learn>=1.4.0",
+    "scipy>=1.12.0",
+    "pandas>=2.2.0",
+    "numpy>=1.26.3",
+    "redis>=5.0.1",
+    "celery>=5.3.6",
+    "pytest>=7.4.4",
+    "pytest-asyncio>=0.23.3",
+    "pytest-cov>=4.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.12.1",
+    "ruff>=0.1.13",
+    "mypy>=1.8.0",
+    "ipython>=8.20.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
