@@ -10,9 +10,13 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
+# Create virtual environment in a shared location
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
 # Copy requirements first for better caching
 COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Production stage
 FROM python:3.11-slim
@@ -26,7 +30,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python dependencies from builder
-COPY --from=builder /root/.local /root/.local
+COPY --from=builder /opt/venv /opt/venv
 
 # Copy application code
 COPY . .
@@ -34,11 +38,12 @@ COPY . .
 # Make sure scripts are executable
 RUN chmod +x scripts/*.sh || true
 
-# Update PATH
-ENV PATH=/root/.local/bin:$PATH
-
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+
+# Update PATH (must be after USER directive to affect the user's environment)
+ENV PATH="/opt/venv/bin:$PATH"
+
 USER appuser
 
 # Health check
