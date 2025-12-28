@@ -106,7 +106,7 @@ An autonomous AI agent that:
             ▼                 ▼                 ▼
     ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
     │    Email     │  │   WhatsApp   │  │  In-Platform │
-    │ (SendGrid)   │  │   (Twilio)   │  │     Chat     │
+    │   (Brevo)    │  │   (Twilio)   │  │     Chat     │
     └──────────────┘  └──────────────┘  └──────────────┘
 ```
 
@@ -140,7 +140,7 @@ An autonomous AI agent that:
   - Frequency capping and throttling
 
 - **Channel Adapters**
-  - **Email** (`channels/email.py`) - SendGrid integration
+  - **Email** (`channels/email.py`) - Brevo (formerly Sendinblue) integration
   - **WhatsApp** (`channels/whatsapp.py`) - Twilio Business API
   - **Social** (`channels/social.py`) - Twitter, Facebook, Instagram DMs
   - **Push** (`channels/push.py`) - In-app notifications
@@ -1131,7 +1131,7 @@ Dashboard: engarde.media/audience-intel
 
 1. **Data Sources**
    - User behavior tracking system
-   - Email platform API (SendGrid)
+   - Email platform API (Brevo)
    - WhatsApp Business API (Twilio)
    - Social media API access
    - Analytics platform integration
