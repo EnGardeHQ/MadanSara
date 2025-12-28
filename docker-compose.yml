@@ -1,0 +1,190 @@
+version: "3.8"
+
+services:
+  # MadanSara Audience Intelligence API
+  madansara-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: madansara-api
+    ports:
+      - "8002:8002"
+    environment:
+      - DATABASE_URL=postgresql://postgres:madansara_password@madansara-db:5432/madansara
+      - REDIS_URL=redis://madansara-redis:6379/0
+      - CELERY_BROKER_URL=redis://madansara-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://madansara-redis:6379/0
+      - MINIO_ENDPOINT=madansara-minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-madansara-minio-key}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-madansara-minio-secret}
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=${DEBUG:-False}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - ENGARDE_API_URL=${ENGARDE_API_URL:-https://api.engarde.com}
+      - ENGARDE_API_KEY=${ENGARDE_API_KEY}
+      - ENGARDE_TENANT_UUID=${ENGARDE_TENANT_UUID}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    depends_on:
+      madansara-db:
+        condition: service_healthy
+      madansara-redis:
+        condition: service_healthy
+      madansara-minio:
+        condition: service_healthy
+    networks:
+      - madansara-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # PostgreSQL Lakehouse
+  madansara-db:
+    image: postgres:15-alpine
+    container_name: madansara-db
+    environment:
+      - POSTGRES_DB=madansara
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=madansara_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - madansara-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d madansara"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache & Celery Broker
+  madansara-redis:
+    image: redis:7-alpine
+    container_name: madansara-redis
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6381:6379"
+    networks:
+      - madansara-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+
+  # MinIO Object Storage (Bucket Storage for Lakehouse)
+  madansara-minio:
+    image: minio/minio:latest
+    container_name: madansara-minio
+    ports:
+      - "9004:9000"   # MinIO API
+      - "9005:9001"   # MinIO Console
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY:-madansara-minio-key}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY:-madansara-minio-secret}
+    volumes:
+      - minio-data:/data
+    networks:
+      - madansara-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    command: server /data --console-address ":9001"
+
+  # Celery Worker (Async Task Processing)
+  madansara-celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: madansara-celery-worker
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=4 -Q default,outreach,segmentation,analysis
+    environment:
+      - DATABASE_URL=postgresql://postgres:madansara_password@madansara-db:5432/madansara
+      - REDIS_URL=redis://madansara-redis:6379/0
+      - CELERY_BROKER_URL=redis://madansara-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://madansara-redis:6379/0
+      - MINIO_ENDPOINT=madansara-minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-madansara-minio-key}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-madansara-minio-secret}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    depends_on:
+      madansara-db:
+        condition: service_healthy
+      madansara-redis:
+        condition: service_healthy
+      madansara-minio:
+        condition: service_healthy
+    networks:
+      - madansara-network
+    restart: unless-stopped
+
+  # Celery Beat (Scheduler)
+  madansara-celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: madansara-celery-beat
+    command: celery -A app.celery_app beat --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://postgres:madansara_password@madansara-db:5432/madansara
+      - REDIS_URL=redis://madansara-redis:6379/0
+      - CELERY_BROKER_URL=redis://madansara-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://madansara-redis:6379/0
+    depends_on:
+      madansara-db:
+        condition: service_healthy
+      madansara-redis:
+        condition: service_healthy
+    networks:
+      - madansara-network
+    restart: unless-stopped
+
+  # Flower (Celery Monitoring Dashboard)
+  madansara-flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: madansara-flower
+    command: celery -A app.celery_app flower --port=5555
+    ports:
+      - "5557:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://madansara-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://madansara-redis:6379/0
+      - FLOWER_BASIC_AUTH=${FLOWER_BASIC_AUTH:-admin:madansara-flower-password}
+    depends_on:
+      madansara-redis:
+        condition: service_healthy
+    networks:
+      - madansara-network
+    restart: unless-stopped
+
+networks:
+  madansara-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  minio-data:
+    driver: local

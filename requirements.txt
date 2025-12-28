@@ -1,58 +1,56 @@
-# Core FastAPI and ASGI
-fastapi>=0.109.0
-uvicorn[standard]>=0.27.0
-python-multipart>=0.0.6
+# FastAPI & Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
 
 # Database
-sqlalchemy>=2.0.25
-alembic>=1.13.1
-psycopg2-binary>=2.9.9
+sqlalchemy==2.0.23
+alembic==1.13.1
+psycopg2-binary==2.9.9
 
-# Data Validation
-pydantic>=2.5.3
-pydantic-settings>=2.1.0
+# Validation & Settings
+pydantic==2.5.0
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
 
-# Authentication & Security
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
+# Async & HTTP
+httpx==0.25.2
+aiohttp==3.9.1
 
-# HTTP Client
-httpx>=0.26.0
+# Redis & Celery
+redis==5.0.1
+celery[redis]==5.3.4
+flower==2.0.1
 
-# Template Engine
-jinja2>=3.1.3
+# MinIO Object Storage
+minio==7.2.0
 
-# AI & LLM
-anthropic>=0.18.0
+# AI Services
+openai>=1.0.0
+anthropic==0.7.8
 
-# Email Service Providers
-sendgrid>=6.11.0
-
-# SMS & WhatsApp
-twilio>=8.12.0
+# Email Services
+sendgrid==6.11.0
+python-mailgun==0.1.0
 
 # Social Media APIs
-# meta-python-sdk>=0.1.0  # Package not available on PyPI - commented out
-linkedin-api>=2.2.0
-tweepy>=4.14.0
+facebook-sdk==3.1.0
+tweepy==4.14.0
+# linkedin-api-python (add when available)
 
-# Data Science & ML
-scikit-learn>=1.4.0
-scipy>=1.12.0
-pandas>=2.2.0
-numpy>=1.26.3
+# WhatsApp Business
+twilio==8.11.0
 
-# Task Queue & Cache
-redis>=5.0.1
-celery>=5.3.6
+# Analytics & Tracking
+google-analytics-data==0.17.0
 
-# Testing
-pytest>=7.4.4
-pytest-asyncio>=0.23.3
-pytest-cov>=4.1.0
+# A/B Testing & Statistics
+scipy==1.11.4
+numpy==1.26.2
 
-# Development Tools
-black>=23.12.1
-ruff>=0.1.13
-mypy>=1.8.0
-ipython>=8.20.0
+# Utilities
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Monitoring & Logging
+sentry-sdk==1.39.1
